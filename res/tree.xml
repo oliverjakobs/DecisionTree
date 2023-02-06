@@ -1,0 +1,14 @@
+<decision name="weather" type="option">
+  <decision value="sunny" name="time" type="numeric">
+    <final value="<10">Stay</final>
+    <final value="11..29">Stay</final>
+    <final value=">=30">Walk</final>
+  </decision>
+
+  <decision value="cloudy" name="hungry" type="option">
+    <final value="yes">Walk</final>
+    <final value="no">Bus</final>
+  </decision>
+
+  <final value="rain">Bus</final>
+</decision>
