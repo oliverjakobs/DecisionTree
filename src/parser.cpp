@@ -22,7 +22,6 @@ DecisionType parse_decision_type(const char* str)
     return DecisionType::ERROR;
 }
 
-
 enum class TokenType
 {
     END_OF_LINE = -1,
@@ -138,8 +137,7 @@ static DecisionExpr parse_decision_expr(const char* str)
     return { DecisionOp::UNKNOWN, 0 };
 }
 
-
-DecisionValue parse_decision_value(const char* str)
+TreeNodeValue parse_value(const char* str)
 {
     if (!str) return "";
 

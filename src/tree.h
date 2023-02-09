@@ -7,14 +7,6 @@
 // ------------------------------------------------------------------------
 // decision
 // ------------------------------------------------------------------------
-enum class DecisionType
-{
-    ERROR,
-    OPTION,
-    NUMERIC,
-    NONE
-};
-
 enum class DecisionOp
 {
     UNKNOWN = 0,
@@ -34,14 +26,15 @@ struct DecisionExpr
     int value2;
 };
 
-typedef std::variant<std::string, DecisionExpr> DecisionValue;
-
-struct Decision
+enum class DecisionType
 {
-    DecisionType type;
-    DecisionValue value;
+    ERROR,
+    OPTION,
+    NUMERIC,
+    NONE
 };
 
+bool decision_expr_eval(const DecisionExpr* expr, int var);
 
 // ------------------------------------------------------------------------
 // tree
@@ -53,21 +46,30 @@ enum class NodeType
     FINAL
 };
 
+typedef std::variant<std::string, DecisionExpr> TreeNodeValue;
+
 struct TreeNode
 {
     NodeType type;
     std::string name;
 
     DecisionType decision;
-    DecisionValue value;
+    TreeNodeValue value;
 
     std::vector<TreeNode> choices;
 };
 
+int tree_node_eval(DecisionType type, TreeNodeValue value, int var);
+int tree_node_eval(DecisionType type, TreeNodeValue value, const std::string& var);
+
+typedef std::variant<std::string, int> DecisionVariable;
+
+const TreeNode* decision_tree_step(const TreeNode* node, int var);
+const TreeNode* decision_tree_step(const TreeNode* node, const std::string& var);
 
 // ------------------------------------------------------------------------
 // parser
 // ------------------------------------------------------------------------
 NodeType parse_node_type(const char* str);
 DecisionType parse_decision_type(const char* str);
-DecisionValue parse_decision_value(const char* str);
+TreeNodeValue parse_value(const char* str);

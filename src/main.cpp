@@ -2,7 +2,7 @@
 #include "tree.h"
 #include "tinyxml2/tinyxml2.h"
 
-using namespace tinyxml2;
+#include <iostream>
 
 const char* get_op_name(DecisionOp type)
 {
@@ -35,8 +35,7 @@ void print_node(const TreeNode* node, int level = 0)
         print_node(&choice, level + 2);
 }
 
-
-TreeNode get_node_from_element(XMLElement* element, bool is_root = false)
+TreeNode parse_tree_node(tinyxml2::XMLElement* element, bool is_root = false)
 {
     TreeNode node;
     node.type = parse_node_type(element->Name());
@@ -52,37 +51,57 @@ TreeNode get_node_from_element(XMLElement* element, bool is_root = false)
         node.name = element->Attribute("name");
 
     node.decision = parse_decision_type(element->Attribute("type"));
-    node.value = is_root ? "root" : parse_decision_value(element->Attribute("value"));
+    node.value = is_root ? "root" : parse_value(element->Attribute("value"));
+
+    auto child = element->FirstChildElement();
+    while (child)
+    {
+        node.choices.push_back(parse_tree_node(child));
+        child = child->NextSiblingElement();
+    }
 
     return node;
 }
 
-void parse_element(TreeNode* node, XMLElement* element)
-{
-    auto child = element->FirstChildElement();
-    while (child)
-    {
-        auto choice = get_node_from_element(child);
-        parse_element(&choice, child);
-        node->choices.push_back(choice);
-        child = child->NextSiblingElement();
-    }
-}
-
 int main()
 {
-    XMLDocument doc;
-    if (doc.LoadFile("res/tree.xml") != XML_SUCCESS)
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile("res/tree.xml") != tinyxml2::XML_SUCCESS)
     {
         printf("Failed to open file\n");
     }
 
-    auto root_element = doc.RootElement();
-    auto root = get_node_from_element(root_element, true);
-
-    parse_element(&root, root_element);
+    auto root = parse_tree_node(doc.RootElement(), true);
 
     print_node(&root);
+
+    printf("\n\nDecicions:\n");
+
+    const TreeNode* node = &root;
+    while (node)
+    {
+        if (node->type == NodeType::FINAL) break;
+
+        if (node->decision == DecisionType::OPTION)
+        {
+            std::cout << "Decision: " << node->name << " (option)\n";
+            std::string answer = "";
+            std::cin >> answer;
+
+            node = decision_tree_step(node, answer);
+        }
+        else if (node->decision == DecisionType::NUMERIC)
+        {
+            std::cout << "Decision: " << node->name << " (numeric)\n";
+            int answer = 0;
+            std::cin >> answer;
+
+            node = decision_tree_step(node, answer);
+        }
+    }
+    printf("Decision done.\n");
+    if (node)
+        std::cout << "Result: " << node->name.c_str() << "\n";
 
     return 0;
 }

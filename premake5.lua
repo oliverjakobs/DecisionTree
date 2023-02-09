@@ -41,8 +41,6 @@ project "DecisionTree"
         "src/**.h",
         "src/**.hpp",
         "src/**.cpp",
-        --Resources
-        "res/**.xml",
     }
 
     includedirs
