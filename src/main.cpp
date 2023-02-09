@@ -1,8 +1,4 @@
-
 #include "tree.h"
-#include "tinyxml2/tinyxml2.h"
-
-#include <iostream>
 
 const char* get_op_name(DecisionOp type)
 {
@@ -23,7 +19,7 @@ const char* get_op_name(DecisionOp type)
 void print_node(const TreeNode* node, int level = 0)
 {
     if (level > 0) printf("%*s-", level, " ");
-    printf("Node: %s (%d)", node->name.c_str(), node->decision);
+    printf("Node: %s (%d)", node->name.c_str(), node->type);
 
     if (auto expr = std::get_if<DecisionExpr>(&node->value))
         printf(" - value: %s | %d;%d", get_op_name(expr->op), expr->value, expr->value2);
@@ -35,73 +31,60 @@ void print_node(const TreeNode* node, int level = 0)
         print_node(&choice, level + 2);
 }
 
-TreeNode parse_tree_node(tinyxml2::XMLElement* element, bool is_root = false)
+void test_tree(const TreeNode* root, std::vector<const char*> answers, std::string expected)
 {
-    TreeNode node;
-    node.type = parse_node_type(element->Name());
-    node.name = element->Name();
-    node.decision = DecisionType::ERROR;
-    node.choices = {};
+    printf("Testing: ");
+    for (auto answer : answers)
+        printf("\"%s\" ", answer);
 
-    if (node.type == NodeType::UNKNOWN) return node;
+    putchar('\n');
 
-    if (node.type == NodeType::FINAL)
-        node.name = element->GetText();
-    else if (node.type == NodeType::DECISION)
-        node.name = element->Attribute("name");
-
-    node.decision = parse_decision_type(element->Attribute("type"));
-    node.value = is_root ? "root" : parse_value(element->Attribute("value"));
-
-    auto child = element->FirstChildElement();
-    while (child)
+    const TreeNode* node = root;
+    for (auto answer : answers)
     {
-        node.choices.push_back(parse_tree_node(child));
-        child = child->NextSiblingElement();
+        if (node->type == NodeType::FINAL)
+        {
+            printf("[Warn] Reached final node before asking all questions.\n");
+            break;
+        }
+
+        if (node->type == NodeType::OPTION)
+            node = decision_tree_step(node, answer);
+        else if (node->type == NodeType::DECISION)
+            node = decision_tree_step(node, std::stoi(answer));
     }
 
-    return node;
+    if (!node)
+    {
+        printf("[Error] Node is null.\n");
+        return;
+    }
+
+    if (node->type != NodeType::FINAL)
+    {
+        printf("[Warn] Reached non node after asking all questions.\n");
+    }
+
+    if (expected.compare(node->name) == 0)
+        printf("[Success] Reached expected node (%s).\n", node->name.c_str());
+    else
+        printf("[Failed] Reached node: %s, expected: %s.\n", node->name.c_str(), expected.c_str());
+
 }
 
 int main()
 {
-    tinyxml2::XMLDocument doc;
-    if (doc.LoadFile("res/tree.xml") != tinyxml2::XML_SUCCESS)
-    {
-        printf("Failed to open file\n");
-    }
-
-    auto root = parse_tree_node(doc.RootElement(), true);
+    auto root = parse_decision_tree("res/tree.xml");
 
     print_node(&root);
 
-    printf("\n\nDecicions:\n");
+    printf("\n\nTests:\n");
 
-    const TreeNode* node = &root;
-    while (node)
-    {
-        if (node->type == NodeType::FINAL) break;
-
-        if (node->decision == DecisionType::OPTION)
-        {
-            std::cout << "Decision: " << node->name << " (option)\n";
-            std::string answer = "";
-            std::cin >> answer;
-
-            node = decision_tree_step(node, answer);
-        }
-        else if (node->decision == DecisionType::NUMERIC)
-        {
-            std::cout << "Decision: " << node->name << " (numeric)\n";
-            int answer = 0;
-            std::cin >> answer;
-
-            node = decision_tree_step(node, answer);
-        }
-    }
-    printf("Decision done.\n");
-    if (node)
-        std::cout << "Result: " << node->name.c_str() << "\n";
+    test_tree(&root, { "sunny", "10" }, "Bus");
+    test_tree(&root, { "sunny", "-10" }, "Stay");
+    test_tree(&root, { "sunny", "200" }, "Walk");
+    test_tree(&root, { "cloudy", "yes" }, "Walk");
+    test_tree(&root, { "rain" }, "Bus");
 
     return 0;
 }

@@ -16,34 +16,17 @@ bool decision_expr_eval(const DecisionExpr* expr, int var)
     return false;
 }
 
-int tree_node_eval(DecisionType type, TreeNodeValue value, int var)
-{
-    // check type
-    auto expr = std::get_if<DecisionExpr>(&value);
-    if (type != DecisionType::NUMERIC || !expr) return -1;
-
-    // eval
-    return decision_expr_eval(expr, var);
-}
-
-int tree_node_eval(DecisionType type, TreeNodeValue value, const std::string& var)
-{
-    // check type
-    auto str_value = std::get_if<std::string>(&value);
-    if (type != DecisionType::OPTION || !str_value) return -1;
-
-    // eval
-    return var.compare(*str_value) == 0;
-}
-
 const TreeNode* decision_tree_step(const TreeNode* node, int var)
 {
     if (node->type == NodeType::FINAL) return node;
-    if (node->decision != DecisionType::NUMERIC) return nullptr;
+    if (node->type != NodeType::DECISION) return nullptr;
 
     for (const auto& choice : node->choices)
     {
-        if (tree_node_eval(node->decision, choice.value, var))
+        auto expr = std::get_if<DecisionExpr>(&choice.value);
+        if (!expr) return nullptr;
+
+        if (decision_expr_eval(expr, var))
             return &choice;
     }
 
@@ -53,11 +36,14 @@ const TreeNode* decision_tree_step(const TreeNode* node, int var)
 const TreeNode* decision_tree_step(const TreeNode* node, const std::string& var)
 {
     if (node->type == NodeType::FINAL) return node;
-    if (node->decision != DecisionType::OPTION) return nullptr;
+    if (node->type != NodeType::OPTION) return nullptr;
 
     for (const auto& choice : node->choices)
     {
-        if (tree_node_eval(node->decision, choice.value, var))
+        auto str_val = std::get_if<std::string>(&choice.value);
+        if (!str_val) return nullptr;
+
+        if (var.compare(*str_val) == 0)
             return &choice;
     }
 
