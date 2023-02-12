@@ -4,6 +4,8 @@
 #include <vector>
 #include <variant>
 
+#include "tinyxml2/tinyxml2.h"
+
 // ------------------------------------------------------------------------
 // decision expr
 // ------------------------------------------------------------------------
@@ -54,4 +56,5 @@ const TreeNode* decision_tree_step(const TreeNode* node, const std::string& var)
 // ------------------------------------------------------------------------
 // parsing
 // ------------------------------------------------------------------------
-TreeNode parse_decision_tree(const char* filename);
+NodeType parse_node_type(const char* str);
+TreeNode parse_tree_node(tinyxml2::XMLElement* element, NodeType parent_type);

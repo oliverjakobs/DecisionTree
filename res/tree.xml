@@ -1,14 +1,17 @@
 <option name="weather">
+  <prompt>How is the weather? (sunny/cloudy/rain)</prompt>
   <decision value="sunny" name="time">
-    <final value="&lt;10">Stay</final>
-    <final value="10:29">Bus</final>
-    <final value="&gt;=30">Walk</final>
+    <prompt>How much time do you have (in minutes)?</prompt>
+    <final value="&lt;10" name="stay" />
+    <final value="10:29" name="bus" />
+    <final value="&gt;=30" name="walk" />
   </decision>
 
   <option value="cloudy" name="hungry">
-    <final value="yes">Walk</final>
-    <final value="no">Bus</final>
+    <prompt>Are you hungry? (yes/no)</prompt>
+    <final value="yes" name="walk" />
+    <final value="no" name="bus" />
   </option>
 
-  <final value="rain">Bus</final>
+  <final value="rain" name="bus" />
 </option>

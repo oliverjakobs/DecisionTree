@@ -1,4 +1,5 @@
 #include "tree.h"
+#include "tree_walker.h"
 
 const char* get_op_name(DecisionOp type)
 {
@@ -31,7 +32,7 @@ void print_node(const TreeNode* node, int level = 0)
         print_node(&choice, level + 2);
 }
 
-void test_tree(const TreeNode* root, std::vector<const char*> answers, std::string expected)
+void test_tree(const TreeWalker* walker, std::vector<const char*> answers, std::string expected)
 {
     printf("Testing: ");
     for (auto answer : answers)
@@ -39,7 +40,7 @@ void test_tree(const TreeNode* root, std::vector<const char*> answers, std::stri
 
     putchar('\n');
 
-    const TreeNode* node = root;
+    const TreeNode* node = walker->get_root();
     for (auto answer : answers)
     {
         if (node->type == NodeType::FINAL)
@@ -72,19 +73,30 @@ void test_tree(const TreeNode* root, std::vector<const char*> answers, std::stri
 
 }
 
-int main()
+void run_tests(const TreeWalker* walker)
 {
-    auto root = parse_decision_tree("res/tree.xml");
-
-    print_node(&root);
-
     printf("\n\nTests:\n");
 
-    test_tree(&root, { "sunny", "10" }, "Bus");
-    test_tree(&root, { "sunny", "-10" }, "Stay");
-    test_tree(&root, { "sunny", "200" }, "Walk");
-    test_tree(&root, { "cloudy", "yes" }, "Walk");
-    test_tree(&root, { "rain" }, "Bus");
+    test_tree(walker, { "sunny", "10" }, "bus");
+    test_tree(walker, { "sunny", "-10" }, "stay");
+    test_tree(walker, { "sunny", "200" }, "walk");
+    test_tree(walker, { "cloudy", "yes" }, "walk");
+    test_tree(walker, { "rain" }, "bus");
+}
+
+int main()
+{
+    TreeWalker walker{ "res/tree.xml" };
+
+    print_node(walker.get_root());
+    //run_tests(&walker);
+
+    auto result = walker.run();
+
+    if (!result.empty())
+        printf("Result: %s\n", result.c_str());
+    else
+        printf("Something went wrong.\n");
 
     return 0;
 }
