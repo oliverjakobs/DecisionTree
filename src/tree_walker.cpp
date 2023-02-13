@@ -1,63 +1,70 @@
 #include "tree_walker.h"
 #include <iostream>
 
-void TreeWalker::read_prompts(tinyxml2::XMLElement* root)
+static void tree_walker_read_prompts(TreeWalker& walker, tinyxml2::XMLElement* element)
 {
-    const char* name = root->Attribute("name");
-    auto prompt_element = root->FirstChildElement("prompt");
+    const char* name = element->Attribute("name");
+    auto prompt_element = element->FirstChildElement("prompt");
     const char* prompt = prompt_element ? prompt_element->GetText() : nullptr;
 
     if (name && prompt)
-        prompts.emplace(name, prompt);
+        walker.prompts.emplace(name, prompt);
 
-    auto child = root->FirstChildElement();
+    auto child = element->FirstChildElement();
     while (child)
     {
         NodeType type = parse_node_type(child->Name());
 
         if (type == NodeType::DECISION || type == NodeType::OPTION)
-        {
-            read_prompts(child);
-        }
+            tree_walker_read_prompts(walker, child);
 
         // next
         child = child->NextSiblingElement();
     }
 }
 
-TreeWalker::TreeWalker(const char* filename)
+static tinyxml2::XMLElement* tree_walker_find_root(tinyxml2::XMLElement* element)
+{
+    NodeType type = parse_node_type(element->Name());
+    if (type != NodeType::UNKNOWN) return element;
+
+    auto child = element->FirstChildElement();
+    while (child)
+    {
+        auto root = tree_walker_find_root(child);
+        if (root) return root;
+
+        // next
+        child = child->NextSiblingElement();
+    }
+    return nullptr;
+}
+
+int tree_walker_load(TreeWalker& walker, const char* filename)
 {
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile("res/tree.xml") != tinyxml2::XML_SUCCESS)
     {
         printf("Failed to open file\n");
-        return;
+        return 0;
     }
 
-    root = parse_tree_node(doc.RootElement(), NodeType::UNKNOWN);
-    read_prompts(doc.RootElement());
-    
-    
-    for (const auto& p : prompts)
-    {
-        printf("%s: %s\n", p.first.c_str(), p.second.c_str());
-    }
+    auto root_element = tree_walker_find_root(doc.RootElement());
+    walker.root = parse_tree_node(root_element, NodeType::UNKNOWN);
+    tree_walker_read_prompts(walker, root_element);
+
+    return 1;
 }
 
-TreeWalker::~TreeWalker()
+std::string tree_walker_run(const TreeWalker& walker)
 {
-
-}
-
-std::string TreeWalker::run() const
-{
-    const TreeNode* node = &root;
+    const TreeNode* node = &walker.root;
     while (node)
     {
         if (node->type == NodeType::FINAL) break;
 
-        auto prompt = prompts.find(node->name);
-        std::cout << (prompt != prompts.end() ? prompt->second : node->name) << "\n";
+        auto prompt = walker.prompts.find(node->name);
+        std::cout << (prompt != walker.prompts.end() ? prompt->second : node->name) << "\n";
 
         std::string answer = "";
         std::cin >> answer;

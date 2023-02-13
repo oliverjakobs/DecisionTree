@@ -17,22 +17,22 @@ const char* get_op_name(DecisionOp type)
     return "";
 }
 
-void print_node(const TreeNode* node, int level = 0)
+void print_node(const TreeNode& node, int level = 0)
 {
     if (level > 0) printf("%*s-", level, " ");
-    printf("Node: %s (%d)", node->name.c_str(), node->type);
+    printf("Node: %s (%d)", node.name.c_str(), node.type);
 
-    if (auto expr = std::get_if<DecisionExpr>(&node->value))
+    if (auto expr = std::get_if<DecisionExpr>(&node.value))
         printf(" - value: %s | %d;%d", get_op_name(expr->op), expr->value, expr->value2);
     else
-        printf(" - value: %s", std::get<std::string>(node->value).c_str());
+        printf(" - value: %s", std::get<std::string>(node.value).c_str());
 
     putchar('\n');
-    for (const auto& choice : node->choices)
-        print_node(&choice, level + 2);
+    for (const auto& choice : node.choices)
+        print_node(choice, level + 2);
 }
 
-void test_tree(const TreeWalker* walker, std::vector<const char*> answers, std::string expected)
+void test_tree(const TreeWalker& walker, std::vector<const char*> answers, std::string expected)
 {
     printf("Testing: ");
     for (auto answer : answers)
@@ -40,7 +40,7 @@ void test_tree(const TreeWalker* walker, std::vector<const char*> answers, std::
 
     putchar('\n');
 
-    const TreeNode* node = walker->get_root();
+    const TreeNode* node = &walker.root;
     for (auto answer : answers)
     {
         if (node->type == NodeType::FINAL)
@@ -73,7 +73,7 @@ void test_tree(const TreeWalker* walker, std::vector<const char*> answers, std::
 
 }
 
-void run_tests(const TreeWalker* walker)
+void run_tests(const TreeWalker& walker)
 {
     printf("\n\nTests:\n");
 
@@ -86,12 +86,14 @@ void run_tests(const TreeWalker* walker)
 
 int main()
 {
-    TreeWalker walker{ "res/tree.xml" };
+    TreeWalker walker;
+    if (!tree_walker_load(walker, "res/tree.xml"))
+        return -1;
 
-    print_node(walker.get_root());
-    //run_tests(&walker);
+    print_node(walker.root);
+    //run_tests(walker);
 
-    auto result = walker.run();
+    auto result = tree_walker_run(walker);
 
     if (!result.empty())
         printf("Result: %s\n", result.c_str());

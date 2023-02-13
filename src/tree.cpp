@@ -132,9 +132,9 @@ static DecisionOp to_decision_op(TokenType type)
     return DecisionOp::UNKNOWN;
 }
 
-static int token_to_int(const Token* t)
+static int token_to_int(const Token& t)
 {
-    return std::stoi(std::string(t->start, t->end - t->start));
+    return std::stoi(std::string(t.start, t.end - t.start));
 }
 
 static DecisionExpr parse_decision_expr(const char* str)
@@ -149,7 +149,7 @@ static DecisionExpr parse_decision_expr(const char* str)
     TokenType type = token.type;
 
     if (token.type == TokenType::NUMBER)
-        value = token_to_int(&token);
+        value = token_to_int(token);
 
     cursor = next_token(token, cursor);
     if (token.type == TokenType::UNKNOWN) return { DecisionOp::UNKNOWN, 0 };
@@ -171,7 +171,7 @@ static DecisionExpr parse_decision_expr(const char* str)
         cursor = next_token(token, cursor);
         if (token.type != TokenType::NUMBER) return { DecisionOp::UNKNOWN, 0 };
 
-        int value2 = token_to_int(&token);
+        int value2 = token_to_int(token);
         type = TokenType::BETWEEN;
 
         cursor = next_token(token, cursor);
@@ -184,7 +184,7 @@ static DecisionExpr parse_decision_expr(const char* str)
     //  - second (and last) token has to be NUMBER token
     if (token.type == TokenType::NUMBER)
     {
-        value = token_to_int(&token);
+        value = token_to_int(token);
 
         cursor = next_token(token, cursor);
         if (token.type == TokenType::END)   return { to_decision_op(type), value };
@@ -231,7 +231,7 @@ TreeNode parse_tree_node(tinyxml2::XMLElement* element, NodeType parent_type)
         auto expr = parse_decision_expr(element->Attribute("value"));
         if (expr.op == DecisionOp::UNKNOWN)
         {
-            printf("[warn] Dropped Node %s (%d): ", name, type);
+            printf("[warn] Dropped node %s (%d): ", name, type);
             printf("Unkown operation.\n");
             return { NodeType::UNKNOWN };
         }
@@ -243,7 +243,7 @@ TreeNode parse_tree_node(tinyxml2::XMLElement* element, NodeType parent_type)
         auto str = element->Attribute("value");
         if (!str)
         {
-            printf("[warn] Dropped Node %s (%d): ", name, type);
+            printf("[warn] Dropped node %s (%d): ", name, type);
             printf("Missing value.\n");
             return { NodeType::UNKNOWN };
         }
@@ -252,9 +252,13 @@ TreeNode parse_tree_node(tinyxml2::XMLElement* element, NodeType parent_type)
 
     // parse choices
     auto choices = parse_choices(element->FirstChildElement(), type);
-
+    if (!choices.empty() && type == NodeType::FINAL)
+    {
+        printf("[warn] Found final node (%s) with children.\n", name);
+        choices.clear();
+    }
     // nodes without choices are final
-    if (choices.empty())
+    else if (choices.empty())
         type = NodeType::FINAL;
 
     // create node and return it
