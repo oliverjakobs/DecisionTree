@@ -35,6 +35,7 @@ enum class NodeType
     UNKNOWN,
     DECISION,
     OPTION,
+    INVALID,
     FINAL
 };
 

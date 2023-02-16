@@ -26,7 +26,7 @@ const TreeNode* decision_tree_step(const TreeNode* node, int var)
         if (!expr) return nullptr;
 
         if (decision_expr_eval(expr, var))
-            return &choice;
+            return choice.type == NodeType::INVALID ? nullptr : &choice;
     }
 
     return nullptr;
@@ -58,6 +58,7 @@ NodeType parse_node_type(const char* str)
 
     if (strcmp("decision", str) == 0) return NodeType::DECISION;
     if (strcmp("option", str) == 0) return NodeType::OPTION;
+    if (strcmp("invalid", str) == 0) return NodeType::INVALID;
     if (strcmp("final", str) == 0) return NodeType::FINAL;
 
     return NodeType::UNKNOWN;
@@ -250,22 +251,25 @@ TreeNode parse_tree_node(tinyxml2::XMLElement* element, NodeType parent_type)
         value = str;
     }
 
-    // parse choices
-    auto choices = parse_choices(element->FirstChildElement(), type);
-    if (!choices.empty() && type == NodeType::FINAL)
-    {
-        printf("[warn] Found final node (%s) with children.\n", name);
-        choices.clear();
-    }
-    // nodes without choices are final
-    else if (choices.empty())
-        type = NodeType::FINAL;
-
-    // create node and return it
+    // create node
     TreeNode node;
     node.type = type;
     node.name = name ? name : "";
     node.value = value;
-    node.choices = choices;
+
+    if (type == NodeType::INVALID) return node;
+
+    // parse choices
+    node.choices = parse_choices(element->FirstChildElement(), type);
+    if (!node.choices.empty() && type == NodeType::FINAL)
+    {
+        printf("[warn] Found final node (%s) with children.\n", name);
+        node.choices.clear();
+    }
+
+    // valid nodes without choices are final
+    if (node.choices.empty())
+        node.type = NodeType::FINAL;
+
     return node;
 }

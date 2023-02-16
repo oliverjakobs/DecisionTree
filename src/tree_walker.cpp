@@ -1,6 +1,15 @@
 #include "tree_walker.h"
 #include <iostream>
 
+static void tree_walker_read_intro(TreeWalker& walker, tinyxml2::XMLElement* element)
+{
+    auto intro_element = element->FirstChildElement("intro");
+    if (!intro_element) return;
+
+    const char* intro_text = intro_element->GetText();
+    walker.intro = intro_text ? intro_text : "";
+}
+
 static void tree_walker_read_prompts(TreeWalker& walker, tinyxml2::XMLElement* element)
 {
     const char* name = element->Attribute("name");
@@ -23,7 +32,23 @@ static void tree_walker_read_prompts(TreeWalker& walker, tinyxml2::XMLElement* e
     }
 }
 
-static tinyxml2::XMLElement* tree_walker_find_root(tinyxml2::XMLElement* element)
+static void tree_walker_read_results(TreeWalker& walker, tinyxml2::XMLElement* element)
+{
+    auto child = element->FirstChildElement("result");
+    while (child)
+    {
+        const char* name = child->Attribute("name");
+        const char* text = child->GetText();
+
+        if (name && text)
+            walker.results.emplace(name, text);
+
+        // next
+        child = child->NextSiblingElement("result");
+    }
+}
+
+static tinyxml2::XMLElement* tree_walker_find_first_node(tinyxml2::XMLElement* element)
 {
     NodeType type = parse_node_type(element->Name());
     if (type != NodeType::UNKNOWN) return element;
@@ -31,8 +56,8 @@ static tinyxml2::XMLElement* tree_walker_find_root(tinyxml2::XMLElement* element
     auto child = element->FirstChildElement();
     while (child)
     {
-        auto root = tree_walker_find_root(child);
-        if (root) return root;
+        auto node = tree_walker_find_first_node(child);
+        if (node) return node;
 
         // next
         child = child->NextSiblingElement();
@@ -43,15 +68,19 @@ static tinyxml2::XMLElement* tree_walker_find_root(tinyxml2::XMLElement* element
 int tree_walker_load(TreeWalker& walker, const char* filename)
 {
     tinyxml2::XMLDocument doc;
-    if (doc.LoadFile("res/tree.xml") != tinyxml2::XML_SUCCESS)
+    auto result = doc.LoadFile("res/tree.xml");
+    if (result != tinyxml2::XML_SUCCESS)
     {
-        printf("Failed to open file\n");
+        std::cout << "Failed to open file. (" << result << ")\n";
         return 0;
     }
 
-    auto root_element = tree_walker_find_root(doc.RootElement());
-    walker.root = parse_tree_node(root_element, NodeType::UNKNOWN);
-    tree_walker_read_prompts(walker, root_element);
+    auto first_node = tree_walker_find_first_node(doc.RootElement());
+    walker.root = parse_tree_node(first_node, NodeType::UNKNOWN);
+
+    tree_walker_read_prompts(walker, first_node);
+    tree_walker_read_results(walker, doc.RootElement());
+    tree_walker_read_intro(walker, doc.RootElement());
 
     return 1;
 }
@@ -74,9 +103,12 @@ std::string tree_walker_run(const TreeWalker& walker)
             next = decision_tree_step(node, answer);
         else if (node->type == NodeType::DECISION)
         {
-            // TODO: safe conversion to int
-            int var = std::stoi(answer);
-            next = decision_tree_step(node, var);
+            char* end;
+            int val = strtol(answer.c_str(), &end, 0);
+            if (end != &answer[0] + answer.size())
+                std::cout << "Answer has to be a number.\n";
+            else
+                next = decision_tree_step(node, val);
         }
 
         if (!next)
@@ -86,4 +118,24 @@ std::string tree_walker_run(const TreeWalker& walker)
     }
 
     return node ? node->name : "";
+}
+
+void tree_walker_show_intro(const TreeWalker& walker)
+{
+    std::cout << "DecisionTree:\n" << walker.intro << "\n";
+}
+
+void tree_walker_show_result(const TreeWalker& walker, const std::string& name)
+{
+    if (name.empty())
+    {
+        std::cout << "Something went wrong.\n";
+        return;
+    }
+
+    auto result = walker.results.find(name);
+    if (result != walker.results.end())
+        std::cout << "Result:\n" << result->second << "\n";
+    else
+        std::cout << "Unkown result.\n";
 }

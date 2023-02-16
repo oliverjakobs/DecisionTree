@@ -40,33 +40,36 @@ Der Grund für diese Entscheidung war, dass ich privat hauptsächlich in C progr
 \\
 \\
 
-\section*{Entscheidungen zur DecisionTree Implementation}
-Der DecisionTree wird aus mehreren TreeNodes aufgebaut. So eine TreeNode hat einen Type, einen Namen, einen Wert und eine Liste an Nachfolgern. Der Type gibt an ob es sich um einen Knoten oder um ein Blatt des Baumes handelt, und um was für eine Art Entschiedung es sich handelt. Dabei werden zwei Arten unterscheiden: 
-
-\myparagraph{Decision}
-Eine \texttt{decision} bildet den Grundbaustein meiner Implementation. An sich lässt sich alle Funktionalität von DecisionTrees nur mit TreeNodes dieser Art umsetzen.
-Der Wert einer \texttt{decision} ist eine Boolean Expression, in die zum Zeitpunkt der Entscheidung eine Variable eingesetzt werden kann. 
-
-\myparagraph{Option}
-Eine \texttt{option} ist ein Spezialfall der Decision
-\\
-\\
-
 
 \section*{Entscheidungen zur XML-Datei}
 Ich bin eigentlich kein Fan vom XML Dateiformat, aber um Baumstrukturen darzustellen ist es die einfachste und verbreitetsten Form.
 
-Der eigentliche DecisionTree besteht aus drei Tags (\texttt{decision}, \texttt{option}, \texttt{final}).
-Diese Tags entsprechen dem Type des aus dem Element generierten TreeNode.
-Der \texttt{final}-Tag dient lediglich der anschaulicheren Darstellung und im generierten Baum hat jede TreeNode den Type \texttt{final}, wenn dieser keine Nachfolger hat.
-Jedes Element mit einem dieser Tags kann als Attribut einen Namen und einen Wert haben.
-Der Name gibt den Namen der Entscheidung an, die dieses Element repräsentiert. 
-
-\myparagraph{Tag: \texttt{decision}}
-Der \verb+decision+-Tag ist der grundlegende Baustein des DecisionTrees. 
+Der eigentliche Entscheidungsbaum besteht aus vier Tags (\texttt{decision}, \texttt{option}, \texttt{final}, \texttt{invalid}).
+Diese Tags entsprechen dem Type der TreeNodes, die aus diesem Element generiert werden.
 
 Für den TreeWalker kann man noch einen weiteren Tag (\verb+prompt+) angeben, der dem TreeWalker zusätzliche Informationen gibt. Mit deisem Tag lässt sich angeben welche Frage der TreeWalker für eine Entscheidung stellen soll. 
 
+
+\section*{Entscheidungen zur DecisionTree Implementation}
+Der DecisionTree wird aus mehreren TreeNodes aufgebaut. So eine TreeNode hat einen Type, einen Namen, einen Wert und eine Liste an Nachfolgern. Anhand der Types werden folgende Arten von TreeNodes unterschieden:
+
+\myparagraph{Decision}
+TreeNodes mit dem Type \texttt{decision} bilden den Grundbaustein meiner Implementation. An sich lässt sich alle Funktionalität von DecisionTrees nur mit TreeNodes dieser Art umsetzen.
+Der Wert einer \texttt{decision} ist eine Boolean Expression, in die zum Zeitpunkt der Entscheidung eine Variable eingesetzt werden kann. Operatoren in diesen Expressions sind die zu Erwartenden ($<, <=, >, >=$) und ein Intervall Operator (angegeben mit $v_1:v_2$). Gibt die Expression \texttt{True} zurück, so ist die entsprechende TreeNode die richtige Antwort. 
+
+\myparagraph{Option}
+Bei einer TreeNode mit dem Type \texttt{option} werden Zeichenkentten verglichen. 
+
+\myparagraph{Final}
+Eine \texttt{final} TreeNode dient in der XML-Datei nur als Verständnishilfe. Im eigentlichen Programm ist jede TreeNode \texttt{final} die keine Nachfolger hat (also ein Blatt ist). 
+
+\myparagraph{Invalid}
+Mit einer \texttt{invalid} TreeNode können bestimmte Werte blockiert werden. So können zum Beispiel alle Werte $<0$ als ungültige Antworten makiert werden.
+\\
+\\
+Wenn über einen Knoten im Baum entschieden wird, wird jeder Nachfolger nacheinander angeschaut. Dabei wird der erste Treffer wird akzeptiert. Die Antwort ist ungültig, wenn kein passender Knoten gefunden wurde oder wenn der (erste) gefundene Knoten \texttt{invalid} ist. 
+
+\section*{Entscheidungen zur Darstellung}
 
 \newpage
 \section*{Bedienung}
@@ -75,6 +78,7 @@ Um das Programm zu starten muss die Datei \texttt{MeshSimplifier.exe} ausgeführ
 \\
 \\
 Die Ausführung des Programms findet in einem \texttt{read-eval-print loop (REPL)} statt. Dem Nutzer wird eine Frage gestellt, auf die er dann antworten muss. Ist die Antwort ungültig, das heißt die Antwort entspricht nicht der erwarteten Form oder ist keine der möglichen Antwortmöglichkeiten, so wird der Nutzer erneut aufgefordert zu antworten. 
+Wenn ein Blatt des Entscheidungsbaumes erreicht wird, wird das Endergebnis angezeigt und das Programm beendet.
 
 \section*{Bibliotheken}
 

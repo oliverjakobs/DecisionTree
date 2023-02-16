@@ -93,12 +93,9 @@ int main()
     print_node(walker.root);
     //run_tests(walker);
 
+    tree_walker_show_intro(walker);
     auto result = tree_walker_run(walker);
-
-    if (!result.empty())
-        printf("Result: %s\n", result.c_str());
-    else
-        printf("Something went wrong.\n");
+    tree_walker_show_result(walker, result);
 
     return 0;
 }
