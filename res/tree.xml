@@ -1,27 +1,21 @@
 <decisiontree>
-  <intro>
-    Intro Text
-  </intro>
+  <intro>Deciding whether to walk or take the bus.</intro>
   <option name="weather">
     <prompt>How is the weather? (sunny/cloudy/rain)</prompt>
     <decision value="sunny" name="time">
       <prompt>How much time do you have (in minutes)?</prompt>
       <invalid value="&lt;0"/>
-      <final value="&lt;10" name="stay" />
-      <final value="10:29" name="bus" />
-      <final value="&gt;=30" name="walk" />
+      <final value="0:29" name="walk" />
+      <final value="&gt;=30" name="bus" />
     </decision>
-
     <option value="cloudy" name="hungry">
       <prompt>Are you hungry? (yes/no)</prompt>
       <final value="yes" name="walk" />
       <final value="no" name="bus" />
     </option>
-
     <final value="rain" name="bus" />
   </option>
 
-  <result name="stay">You should stay home.</result>
   <result name="walk">You should walk.</result>
   <result name="bus">You should take the bus.</result>
 </decisiontree>

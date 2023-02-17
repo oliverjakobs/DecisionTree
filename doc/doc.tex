@@ -42,34 +42,72 @@ Der Grund für diese Entscheidung war, dass ich privat hauptsächlich in C progr
 
 
 \section*{Entscheidungen zur XML-Datei}
-Ich bin eigentlich kein Fan vom XML Dateiformat, aber um Baumstrukturen darzustellen ist es die einfachste und verbreitetsten Form.
-
-Der eigentliche Entscheidungsbaum besteht aus vier Tags (\texttt{decision}, \texttt{option}, \texttt{final}, \texttt{invalid}).
+In der XML-Datei kann neben dem Entscheidungsbaum auch noch Zusatzinformationen angegeben werden, um die Interaktion mit dem Entscheidungsbaum zu vereinfachen. 
+Mit dem Tag \texttt{intro} kann ein Einleitungstext angegeben werden. 
+Mit dem Tag \texttt{prompt} kann definiert werden welche Frage der TreeWalker für eine Entscheidung stellen soll.
+Und mit dem Tag \texttt{result} können Beschreibungen der Ergebnisse angegeben werden. Hier muss dann noch der Name des Ergebnisses als Attribut angegeben werden.
+\\
+Der eigentliche Entscheidungsbaum besteht aus vier Tags (\texttt{decision}, \texttt{option}, \texttt{final} und \texttt{invalid}). 
 Diese Tags entsprechen dem Type der TreeNodes, die aus diesem Element generiert werden.
+Außerdem können Elemente mit diesen Tags noch einen Namen (\texttt{name}) und einen Wert (\texttt{value}) als Attribut haben.
+\\
+\\
+Ich habe \href{https://heartbeat.comet.ml/understanding-the-mathematics-behind-decision-trees-22d86d55906}{\textbf{hier}} einen einfachen Entscheidungsbaum gefunden, mit dem ich alle Features demonstrieren kann:
 
-Für den TreeWalker kann man noch einen weiteren Tag (\verb+prompt+) angeben, der dem TreeWalker zusätzliche Informationen gibt. Mit deisem Tag lässt sich angeben welche Frage der TreeWalker für eine Entscheidung stellen soll. 
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{tree.png}
+\end{figure}
 
+Wenn man diesen Baum dann mit meiner XML-Struktur darstellt, kann das wie folgt aussehen (um alle Features zu zeigen habe ich den Baum bisschen angepasst):
 
+\begin{verbatim}
+<decisiontree>
+  <intro>Deciding whether to walk or take the bus.</intro>
+  <option name="weather">
+    <prompt>How is the weather? (sunny/cloudy/rain)</prompt>
+    <decision value="sunny" name="time">
+      <prompt>How much time do you have (in minutes)?</prompt>
+      <invalid value="&lt;0"/>
+      <final value="0:29" name="walk" />
+      <final value="&gt;=30" name="bus" />
+    </decision>
+    <option value="cloudy" name="hungry">
+      <prompt>Are you hungry? (yes/no)</prompt>
+      <final value="yes" name="walk" />
+      <final value="no" name="bus" />
+    </option>
+    <final value="rain" name="bus" />
+  </option>
+
+  <result name="walk">You should walk.</result>
+  <result name="bus">You should take the bus.</result>
+</decisiontree>
+\end{verbatim}
+
+\newpage
 \section*{Entscheidungen zur DecisionTree Implementation}
 Der DecisionTree wird aus mehreren TreeNodes aufgebaut. So eine TreeNode hat einen Type, einen Namen, einen Wert und eine Liste an Nachfolgern. Anhand der Types werden folgende Arten von TreeNodes unterschieden:
 
 \myparagraph{Decision}
 TreeNodes mit dem Type \texttt{decision} bilden den Grundbaustein meiner Implementation. An sich lässt sich alle Funktionalität von DecisionTrees nur mit TreeNodes dieser Art umsetzen.
-Der Wert einer \texttt{decision} ist eine Boolean Expression, in die zum Zeitpunkt der Entscheidung eine Variable eingesetzt werden kann. Operatoren in diesen Expressions sind die zu Erwartenden ($<, <=, >, >=$) und ein Intervall Operator (angegeben mit $v_1:v_2$). Gibt die Expression \texttt{True} zurück, so ist die entsprechende TreeNode die richtige Antwort. 
+
+Der Wert einer \texttt{decision} ist eine Boolean Expression, in die zum Zeitpunkt der Entscheidung eine Variable eingesetzt werden kann. Operatoren in diesen Expressions sind die Standartoperatoren ($<, <=, >, >=$) und ein Intervall Operator (angegeben mit $v_1:v_2$). Gibt die Expression \texttt{True} zurück, so ist die entsprechende TreeNode die richtige Antwort.
+
+In meiner Implementation sind alle numerischen Werte \texttt{Integers}, da \texttt{Float}-Werte den Umfang und den damit verbundenen Aufwand sehr stark in die Höhe treiben würden.
+Außerdem ist die Umsetzung von Float-Werten (bis auf das Erkennen und Parsen) gleich mit der Umsetzung der Integer-Werte und bringt daher keine neuen Herausforderungen. 
 
 \myparagraph{Option}
-Bei einer TreeNode mit dem Type \texttt{option} werden Zeichenkentten verglichen. 
+Bei einer TreeNode mit dem Type \texttt{option} können die Antwortmöglichkeiten als Zeichenketten angegeben werden. Die gegebene Antwort wird mit allen diesen Zeichenketten (mit \texttt{std::string::compare}) verglichen und die erste passende Option wird ausgewählt.
 
 \myparagraph{Final}
-Eine \texttt{final} TreeNode dient in der XML-Datei nur als Verständnishilfe. Im eigentlichen Programm ist jede TreeNode \texttt{final} die keine Nachfolger hat (also ein Blatt ist). 
+Eine TreeNode ist \texttt{final}, wenn sie keine Nachfolger hat (also ein Blatt ist). In der XML-Datei kann der entsprechende Tag verwendet werden, um das zu verdeutlichen.
 
 \myparagraph{Invalid}
-Mit einer \texttt{invalid} TreeNode können bestimmte Werte blockiert werden. So können zum Beispiel alle Werte $<0$ als ungültige Antworten makiert werden.
+Mit einer \texttt{invalid} TreeNode können bestimmte Werte blockiert werden. So können zum Beispiel alle Werte $<0$ als ungültige Antwort makiert werden.
 \\
 \\
-Wenn über einen Knoten im Baum entschieden wird, wird jeder Nachfolger nacheinander angeschaut. Dabei wird der erste Treffer wird akzeptiert. Die Antwort ist ungültig, wenn kein passender Knoten gefunden wurde oder wenn der (erste) gefundene Knoten \texttt{invalid} ist. 
-
-\section*{Entscheidungen zur Darstellung}
+Wenn über einen Knoten im Baum entschieden wird, wird jeder Nachfolger nacheinander angeschaut. Dabei wird der erste Treffer wird akzeptiert. Die Antwort ist ungültig, wenn kein passender Knoten gefunden wurde, wenn die Eingabe das falsche Format hat (z.B. kein \texttt{int}-Wert als Eingabe für eine \texttt{decision}) oder wenn der (erste) gefundene Knoten \texttt{invalid} ist. 
 
 \newpage
 \section*{Bedienung}
@@ -83,7 +121,7 @@ Wenn ein Blatt des Entscheidungsbaumes erreicht wird, wird das Endergebnis angez
 \section*{Bibliotheken}
 
 Da dieses Projekt textbasiert ist benötige ich nur eine Möglichkeit XML-Dateien einzulesen. Für diese Funktionalität habe ich mich für die Bibliothek \textbf{TinyXML-2} (\url{https://github.com/leethomason/tinyxml2}) entschieden.
- 
+Die Bibliothek besteht aus zwei Dateien (einer \texttt{.h} und einer \texttt{.cpp}), die ich einfach in mein Projekt eingefügt habe.
 
 \section*{Build}
 
