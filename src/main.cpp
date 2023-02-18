@@ -32,7 +32,7 @@ void print_node(const TreeNode& node, int level = 0)
         print_node(choice, level + 2);
 }
 
-void test_tree(const TreeWalker& walker, std::vector<const char*> answers, std::string expected)
+void test_tree(const TreeWalker& walker, std::vector<const char*> answers, const char* expected)
 {
     printf("Testing: ");
     for (auto answer : answers)
@@ -57,7 +57,8 @@ void test_tree(const TreeWalker& walker, std::vector<const char*> answers, std::
 
     if (!node)
     {
-        printf("[Error] Node is null.\n");
+        if (expected) printf("[Error] Node is null.\n");
+        else          printf("[Success] Reached null.\n");
         return;
     }
 
@@ -66,32 +67,39 @@ void test_tree(const TreeWalker& walker, std::vector<const char*> answers, std::
         printf("[Warn] Reached non node after asking all questions.\n");
     }
 
-    if (expected.compare(node->name) == 0)
+    if (node->name.compare(expected) == 0)
         printf("[Success] Reached expected node (%s).\n", node->name.c_str());
     else
-        printf("[Failed] Reached node: %s, expected: %s.\n", node->name.c_str(), expected.c_str());
-
+        printf("[Failed] Reached node: %s, expected: %s.\n", node->name.c_str(), expected);
 }
 
 void run_tests(const TreeWalker& walker)
 {
-    printf("\n\nTests:\n");
+    printf("===============================================\n");
+    printf("| Decision Tree:                              |\n");
+    printf("===============================================\n");
+    print_node(walker.root);
+    putchar('\n');
+    printf("===============================================\n");
+    printf("| Tests:                                      |\n");
+    printf("===============================================\n");
 
-    test_tree(walker, { "sunny", "10" }, "bus");
-    test_tree(walker, { "sunny", "-10" }, "stay");
-    test_tree(walker, { "sunny", "200" }, "walk");
+    test_tree(walker, { "sunny", "10" }, "walk");
+    test_tree(walker, { "sunny", "-10" }, nullptr);
+    test_tree(walker, { "sunny", "200" }, "bus");
     test_tree(walker, { "cloudy", "yes" }, "walk");
     test_tree(walker, { "rain" }, "bus");
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    const char* filename = argc > 1 ? argv[1] : "res/tree.xml";
+
     TreeWalker walker;
-    if (!tree_walker_load(walker, "res/tree.xml"))
+    if (!tree_walker_load(walker, filename))
         return -1;
 
-    print_node(walker.root);
-    //run_tests(walker);
+    // run_tests(walker);
 
     tree_walker_show_intro(walker);
     auto result = tree_walker_run(walker);

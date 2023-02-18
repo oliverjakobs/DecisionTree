@@ -39,27 +39,36 @@ Das Programm habe ich bewusst im C-Style programmiert. Das heißt ich habe mich 
 Der Grund für diese Entscheidung war, dass ich privat hauptsächlich in C programmiere und so am komfortabelsten mit diesem Stil bin. Außerdem habe ich so weniger Aufwand, wenn ich die Implementation anpassen muss, wenn ich Decision Trees in meinen C-Programmen verwenden will.
 \\
 \\
-
-
-\section*{Entscheidungen zur XML-Datei}
-In der XML-Datei kann neben dem Entscheidungsbaum auch noch Zusatzinformationen angegeben werden, um die Interaktion mit dem Entscheidungsbaum zu vereinfachen. 
-Mit dem Tag \texttt{intro} kann ein Einleitungstext angegeben werden. 
-Mit dem Tag \texttt{prompt} kann definiert werden welche Frage der TreeWalker für eine Entscheidung stellen soll.
-Und mit dem Tag \texttt{result} können Beschreibungen der Ergebnisse angegeben werden. Hier muss dann noch der Name des Ergebnisses als Attribut angegeben werden.
-\\
-Der eigentliche Entscheidungsbaum besteht aus vier Tags (\texttt{decision}, \texttt{option}, \texttt{final} und \texttt{invalid}). 
-Diese Tags entsprechen dem Type der TreeNodes, die aus diesem Element generiert werden.
-Außerdem können Elemente mit diesen Tags noch einen Namen (\texttt{name}) und einen Wert (\texttt{value}) als Attribut haben.
-\\
-\\
-Ich habe \href{https://heartbeat.comet.ml/understanding-the-mathematics-behind-decision-trees-22d86d55906}{\textbf{hier}} einen einfachen Entscheidungsbaum gefunden, mit dem ich alle Features demonstrieren kann:
+Um ein Beispiel zu haben, mit dem ich mein Programm testen kann habe ich online nach einfachen Entscheidungsbäumen gesucht und hier (\url{https://heartbeat.comet.ml/understanding-the-mathematics-behind-decision-trees-22d86d55906}) einen gefunden, mit dem ich (fast) alle geplanten Features demonstrieren kann. 
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\linewidth]{tree.png}
 \end{figure}
 
-Wenn man diesen Baum dann mit meiner XML-Struktur darstellt, kann das wie folgt aussehen (um alle Features zu zeigen habe ich den Baum bisschen angepasst):
+Zwei Features haben mir noch gefehlt, aber diese konnte ich mit kleinen Anpassungen (ohne dabei die Ergebnisse zu verändern) auch noch darstellen.
+Mit diesem Baum habe ich dann meine XML-Struktur definiert und danach mein Programm implementiert. 
+
+\newpage
+\section*{Entscheidungen zur XML-Datei}
+In der XML-Datei kann neben dem Entscheidungsbaum auch noch Zusatzinformationen angegeben werden, um die Interaktion mit dem Entscheidungsbaum zu vereinfachen. 
+Das Root-Element der XML-Datei habe ich \texttt{decisiontree}. Aber da ich dafür keine Abfrage implementiert habe, kann man das im Grunde so nennen wie man möchte.
+
+\myparagraph{Zusatzinformationen}
+Mit dem Tag \texttt{intro} kann ein Einleitungstext angegeben werden. 
+Mit dem Tag \texttt{prompt} kann definiert werden welche Frage der TreeWalker für eine Entscheidung stellen soll.
+Und mit dem Tag \texttt{result} können Beschreibungen der Ergebnisse angegeben werden. Hier muss dann noch der Name des Ergebnisses als Attribut angegeben werden.
+
+\myparagraph{Entscheidungsbaum}
+Der eigentliche Entscheidungsbaum besteht aus vier Tags (\texttt{decision}, \texttt{option}, \texttt{final} und \texttt{invalid}). 
+Diese Tags entsprechen dem Type der TreeNodes, die aus diesem Element generiert werden.
+Außerdem können Elemente mit diesen Tags noch einen Namen (\texttt{name}) und einen Wert (\texttt{value}) als Attribut haben.
+
+\myparagraph{Beispiel}
+Wi oben erwähnt muss der Beispielsbaum noch bisschen angepasst werden. 
+Die erste Anpassung nutzt den \texttt{invalid} Tag um bei der Entscheidung \emph{Time?} negative Antworten zu verhindern.
+Die zweite Anpassung habe ich letztendlich nur gemacht um ein Interval als Antowrtmöglichkeit angeben zu können.
+Wenn man dann den angepassten Baum dann mit meiner XML-Struktur darstellt, kann das wie folgt aussehen:
 
 \begin{verbatim}
 <decisiontree>
@@ -112,7 +121,10 @@ Wenn über einen Knoten im Baum entschieden wird, wird jeder Nachfolger nacheina
 \newpage
 \section*{Bedienung}
 
-Um das Programm zu starten muss die Datei \texttt{MeshSimplifier.exe} ausgeführt werden. Dafür wird neben der \texttt{.exe} auch der gesammte Inhalt des Orderns \texttt{./res/} benötigt.
+Um das Programm zu starten muss die Datei \texttt{DecisionTree.exe} ausgeführt werden. Dafür wird neben der \texttt{.exe} auch der Ordern \texttt{./res/} mit Inhalt benötigt.
+Beim Starten über die Kommandozeile kann noch ein Pfad zu einer XML-Datei als Argument angegeben werden, um einen eigenen Entscheidungsbaum zu laden. 
+\[\texttt{.\textbackslash DecisionTree.exe [filename]}\]
+Wird kein Argument angegeben wird der oben vorgestellte Beispielsbaum als Default geladen.
 \\
 \\
 Die Ausführung des Programms findet in einem \texttt{read-eval-print loop (REPL)} statt. Dem Nutzer wird eine Frage gestellt, auf die er dann antworten muss. Ist die Antwort ungültig, das heißt die Antwort entspricht nicht der erwarteten Form oder ist keine der möglichen Antwortmöglichkeiten, so wird der Nutzer erneut aufgefordert zu antworten. 
