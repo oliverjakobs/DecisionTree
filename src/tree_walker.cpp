@@ -1,6 +1,7 @@
 #include "tree_walker.h"
 #include <iostream>
 
+// read the intro text if available
 static void tree_walker_read_intro(TreeWalker& walker, tinyxml2::XMLElement* element)
 {
     auto intro_element = element->FirstChildElement("intro");
@@ -10,6 +11,7 @@ static void tree_walker_read_intro(TreeWalker& walker, tinyxml2::XMLElement* ele
     walker.intro = intro_text ? intro_text : "";
 }
 
+// recursivly read the prompts for the decisions
 static void tree_walker_read_prompts(TreeWalker& walker, tinyxml2::XMLElement* element)
 {
     const char* name = element->Attribute("name");
@@ -32,6 +34,7 @@ static void tree_walker_read_prompts(TreeWalker& walker, tinyxml2::XMLElement* e
     }
 }
 
+// read the describtions for the results
 static void tree_walker_read_results(TreeWalker& walker, tinyxml2::XMLElement* element)
 {
     auto child = element->FirstChildElement("result");
@@ -48,10 +51,11 @@ static void tree_walker_read_results(TreeWalker& walker, tinyxml2::XMLElement* e
     }
 }
 
+// find the first node of the actual tree (first element with tag 'decision' or 'option')
 static tinyxml2::XMLElement* tree_walker_find_first_node(tinyxml2::XMLElement* element)
 {
     NodeType type = parse_node_type(element->Name());
-    if (type != NodeType::UNKNOWN) return element;
+    if (type == NodeType::DECISION || type == NodeType::OPTION) return element;
 
     auto child = element->FirstChildElement();
     while (child)
@@ -65,17 +69,25 @@ static tinyxml2::XMLElement* tree_walker_find_first_node(tinyxml2::XMLElement* e
     return nullptr;
 }
 
+// load a TreeWalker from file
 int tree_walker_load(TreeWalker& walker, const char* filename)
 {
     tinyxml2::XMLDocument doc;
-    auto result = doc.LoadFile("res/tree.xml");
+    auto result = doc.LoadFile(filename);
     if (result != tinyxml2::XML_SUCCESS)
     {
-        std::cout << "Failed to open file. (" << result << ")\n";
+        std::cout << "[Error] Failed to open file (" << filename << "). (" << result << ")\n";
         return 0;
     }
 
     auto first_node = tree_walker_find_first_node(doc.RootElement());
+
+    if (!first_node)
+    {
+        std::cout << "[Error] Couldn't find a decision tree in file " << filename << "\n";
+        return 0;
+    }
+
     walker.root = parse_tree_node(first_node, NodeType::UNKNOWN);
 
     tree_walker_read_prompts(walker, first_node);
@@ -85,11 +97,13 @@ int tree_walker_load(TreeWalker& walker, const char* filename)
     return 1;
 }
 
+// REPL to step trough the tree
 std::string tree_walker_run(const TreeWalker& walker)
 {
     const TreeNode* node = &walker.root;
     while (node)
     {
+        // check if done
         if (node->type == NodeType::FINAL) break;
 
         auto prompt = walker.prompts.find(node->name);
@@ -98,6 +112,7 @@ std::string tree_walker_run(const TreeWalker& walker)
         std::string answer = "";
         std::cin >> answer;
 
+        // check answer
         const TreeNode* next = nullptr;
         if (node->type == NodeType::OPTION)
             next = decision_tree_step(node, answer);
@@ -111,10 +126,9 @@ std::string tree_walker_run(const TreeWalker& walker)
                 next = decision_tree_step(node, val);
         }
 
-        if (!next)
-            std::cout << "Invalid answer. Try Again.\n";
-        else
-            node = next;
+        // validate
+        if (!next)  std::cout << "Invalid answer. Try Again.\n";
+        else        node = next;
     }
 
     return node ? node->name : "";
@@ -122,20 +136,25 @@ std::string tree_walker_run(const TreeWalker& walker)
 
 void tree_walker_show_intro(const TreeWalker& walker)
 {
-    std::cout << "DecisionTree:\n" << walker.intro << "\n";
+    std::cout << "===============================================\n";
+    std::cout << "Decision Tree:\n" << walker.intro << "\n";
+    std::cout << "===============================================\n\n";
 }
 
 void tree_walker_show_result(const TreeWalker& walker, const std::string& name)
 {
+    std::cout << "\n===============================================\n";
     if (name.empty())
     {
         std::cout << "Something went wrong.\n";
-        return;
     }
-
-    auto result = walker.results.find(name);
-    if (result != walker.results.end())
-        std::cout << "Result:\n" << result->second << "\n";
     else
-        std::cout << "Unkown result.\n";
+    {
+        auto result = walker.results.find(name);
+        if (result != walker.results.end())
+            std::cout << "Result:\n" << result->second << "\n";
+        else
+            std::cout << "Unkown result.\n";
+    }
+    std::cout << "===============================================\n";
 }

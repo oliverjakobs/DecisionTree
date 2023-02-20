@@ -1,0 +1,25 @@
+<decisiontree>
+  <intro>Should I accept a new job offer?</intro>
+  <decision name="salary">
+    <prompt>How high is the salary?</prompt>
+
+    <decision value="&gt;=50000" name="commute">
+      <prompt>How long is the commute (in minutes)?</prompt>
+      <invalid value="&lt;0"/>
+      <option value="&lt;=60" name="coffee">
+        <prompt>Do they offer free coffee? (yes/no)</prompt>
+
+        <final value="yes" name="accept" />
+        <final value="no" name="decline" />
+        
+      </option>
+      
+      <final value="&gt;60" name="decline" />
+    </decision>
+
+    <final value="&lt;50000" name="decline" />
+  </decision>
+
+  <result name="accept">You should accept the offer.</result>
+  <result name="decline">You should decline the offer.</result>
+</decisiontree>

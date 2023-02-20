@@ -88,8 +88,10 @@ void run_tests(const TreeWalker& walker)
     test_tree(walker, { "sunny", "-10" }, nullptr);
     test_tree(walker, { "sunny", "200" }, "bus");
     test_tree(walker, { "cloudy", "yes" }, "walk");
-    test_tree(walker, { "rain" }, "bus");
+    test_tree(walker, { "rainy" }, "bus");
 }
+
+// #define RUN_TESTS
 
 int main(int argc, char* argv[])
 {
@@ -99,11 +101,13 @@ int main(int argc, char* argv[])
     if (!tree_walker_load(walker, filename))
         return -1;
 
-    // run_tests(walker);
-
+#ifdef RUN_TESTS
+    run_tests(walker);
+#else
     tree_walker_show_intro(walker);
     auto result = tree_walker_run(walker);
     tree_walker_show_result(walker, result);
+#endif
 
     return 0;
 }

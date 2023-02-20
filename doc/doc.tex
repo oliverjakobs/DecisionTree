@@ -21,22 +21,7 @@
 
 \section*{Thema und Motivation}
 
-Als Thema für meine Modulaufgabe habe ich mich für \textbf{Decision Trees} entschieden. 
-
-Einlesen eines Decision Trees aus einer XML-Datei und Frage-Antwort Spiel oder textbasiertes Adventure.
-
-Das Konzept lässt sich neben künstlicher Intelligenz auch auf viele andere Bereiche anwenden. Ein Beispiel ist eine Alternative zu Zustandsautomaten um festzulegen welche Animation gespilet werden soll.
-
-\newpage
-
-\section*{Allgemeine Designentscheidungen}
-
-Mein Programm lässt sich in zwei Abschnitte aufteilen. Der erste Teil ist die Implementiation des Decision Tress. Dieser wird aus einer .xml-Datei eingelesen und in eine passenden Datenstruktur geladen. 
-Den zweiten Teil habe ich TreeWalker gennant. Dieser Teil beschäftigt sich mit Kommunikation zwischen dem Nutzer und dem Baum. 
-\\
-\\
-Das Programm habe ich bewusst im C-Style programmiert. Das heißt ich habe mich bei der Struktur des Programmes an C gehalten und habe lediglich einzelene Features (z.B. \texttt{std::vector} oder \texttt{std::variant}) aus C++ verwendet.
-Der Grund für diese Entscheidung war, dass ich privat hauptsächlich in C programmiere und so am komfortabelsten mit diesem Stil bin. Außerdem habe ich so weniger Aufwand, wenn ich die Implementation anpassen muss, wenn ich Decision Trees in meinen C-Programmen verwenden will.
+Als Thema für meine Modulaufgabe habe ich mich für \textbf{Decision Trees} entschieden. Dafür habe ich ein Programm geschrieben, das einen Entscheidungsbaum aus einer XML-Datei einliest und daraus eine passende Datenstruktur generiert. Dann kann diese Datenstruktur über das Terminal in einer Art Frage-Antwort Spiel durchlaufen werden.
 \\
 \\
 Um ein Beispiel zu haben, mit dem ich mein Programm testen kann habe ich online nach einfachen Entscheidungsbäumen gesucht und hier (\url{https://heartbeat.comet.ml/understanding-the-mathematics-behind-decision-trees-22d86d55906}) einen gefunden, mit dem ich (fast) alle geplanten Features demonstrieren kann. 
@@ -44,12 +29,23 @@ Um ein Beispiel zu haben, mit dem ich mein Programm testen kann habe ich online 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\linewidth]{tree.png}
+	\caption{tree.xml}
 \end{figure}
 
 Zwei Features haben mir noch gefehlt, aber diese konnte ich mit kleinen Anpassungen (ohne dabei die Ergebnisse zu verändern) auch noch darstellen.
 Mit diesem Baum habe ich dann meine XML-Struktur definiert und danach mein Programm implementiert. 
 
 \newpage
+
+\section*{Allgemeine Designentscheidungen}
+
+Mein Programm lässt sich in zwei Abschnitte aufteilen. Der erste Teil ist die Implementiation des Entscheidungsbaumes. Dieser wird aus einer .xml-Datei eingelesen und in eine passenden Datenstruktur geladen. 
+Den zweiten Teil habe ich TreeWalker gennant. Dieser Teil beschäftigt sich mit Kommunikation zwischen dem Nutzer und dem Baum. 
+\\
+\\
+Das Programm habe ich bewusst im C-Style programmiert. Das heißt ich habe mich bei der Struktur des Programmes an C gehalten und habe lediglich einzelene Features (z.B. \texttt{std::vector} oder \texttt{std::variant}) aus C++ verwendet.
+Der Grund für diese Entscheidung war, dass ich privat hauptsächlich in C programmiere und so am komfortabelsten mit diesem Stil bin. Außerdem habe ich so weniger Aufwand, wenn ich die Implementation anpassen muss, wenn ich Decision Trees in meinen C-Programmen verwenden will.
+
 \section*{Entscheidungen zur XML-Datei}
 In der XML-Datei kann neben dem Entscheidungsbaum auch noch Zusatzinformationen angegeben werden, um die Interaktion mit dem Entscheidungsbaum zu vereinfachen. 
 Das Root-Element der XML-Datei habe ich \texttt{decisiontree}. Aber da ich dafür keine Abfrage implementiert habe, kann man das im Grunde so nennen wie man möchte.
@@ -74,7 +70,7 @@ Wenn man dann den angepassten Baum dann mit meiner XML-Struktur darstellt, kann 
 <decisiontree>
   <intro>Deciding whether to walk or take the bus.</intro>
   <option name="weather">
-    <prompt>How is the weather? (sunny/cloudy/rain)</prompt>
+    <prompt>How is the weather? (sunny/cloudy/rainy)</prompt>
     <decision value="sunny" name="time">
       <prompt>How much time do you have (in minutes)?</prompt>
       <invalid value="&lt;0"/>
@@ -86,7 +82,7 @@ Wenn man dann den angepassten Baum dann mit meiner XML-Struktur darstellt, kann 
       <final value="yes" name="walk" />
       <final value="no" name="bus" />
     </option>
-    <final value="rain" name="bus" />
+    <final value="rainy" name="bus" />
   </option>
 
   <result name="walk">You should walk.</result>
@@ -94,7 +90,6 @@ Wenn man dann den angepassten Baum dann mit meiner XML-Struktur darstellt, kann 
 </decisiontree>
 \end{verbatim}
 
-\newpage
 \section*{Entscheidungen zur DecisionTree Implementation}
 Der DecisionTree wird aus mehreren TreeNodes aufgebaut. So eine TreeNode hat einen Type, einen Namen, einen Wert und eine Liste an Nachfolgern. Anhand der Types werden folgende Arten von TreeNodes unterschieden:
 
@@ -118,17 +113,72 @@ Mit einer \texttt{invalid} TreeNode können bestimmte Werte blockiert werden. So
 \\
 Wenn über einen Knoten im Baum entschieden wird, wird jeder Nachfolger nacheinander angeschaut. Dabei wird der erste Treffer wird akzeptiert. Die Antwort ist ungültig, wenn kein passender Knoten gefunden wurde, wenn die Eingabe das falsche Format hat (z.B. kein \texttt{int}-Wert als Eingabe für eine \texttt{decision}) oder wenn der (erste) gefundene Knoten \texttt{invalid} ist. 
 
-\newpage
+\section*{Parsen von Boolean Expressions}
+Ein großer Teil von meiner Implementation ist ein Parser um aus einer Zeichenkette eine Boolean Expression zu parsen, in die dann nach Eingabe einer Variablen auch evaluiert werden kann.
+
+Um das umzusetzen wird eine Zeichenkette in sogenannte Tokens übersetzt, aus denen dann der Ausdruck generiert wird. 
+Die Funktion \verb+next_token+ erzeugt aus einer Zeichenkette einen Token und gibt den verbleibenden, noch nicht betrachteten Teil der Zeichenkette zurück. Dieser Token kann alle Bestandteile eines Ausruckes darstellen. Eine besondere Art ist der \texttt{END}-Token. Dieser kennzeichnet das Ende der Zeichenkette.
+Um einen gültigen Ausruck zu generieren, müssen die entsprechenden Token in der richtigen Reihenfolge gelesen werden. 
+Für die einfachsten Ausdrücke (z.b. x<0) muss der erste Token ein Operator, der Zweite dann eine Zahl und der Dritte dann der \texttt{END}-Token sein. Werden all diese Token erfolgreich gelesen hat man einen gültigen Ausdruck. Dieser kann dann ausgeführt werden, indem man eine Variable mit dem vorher geparsten Wert, auf eine vom Operator abhängige Art, vergleicht. Dafür kann man z.B. ein \texttt{switch}-Statement verwenden.
+
+Mit diesen einfachen Ausdrücken könnte man schon viele Bäume umsetzen, aber ich habe noch zwei weitere Arten von Ausdrücken erlaubt.
+
+Die erste Art ist ein Shortcut für den Gleichheits-Operator. Wenn die Zeichenkette aus einem einzigen Token (der \texttt{END}-Token ausgenommen) besteht und dieser eine Zahl ist, wird der Gleichheits-Operator verwendet und ein entsprechender Ausdruck generiert. 
+Die zweite Art ist der Interval-Operator. Dieser wird angegeben mit $v_1:v_2$. So ein Ausdruck ist ein bisschen aufwendiger. Vorallem mit dem Shortcut für den Gleichheits-Operator wird das ganze Parsen um einiges komplexer.
+
+Der komplette Parsing-Vorgang läuft im Grunde so ab:
+
+\begin{enumerate}
+	\item Ersten Token ist Operator (Außer interval):
+	\begin{enumerate}
+		\item Wenn zweiter Token Zahl und dritter Token \texttt{END} ist \verb+->+ Parsen erfolgreich.
+		\item Alles andere \verb+->+ Ungültiger Ausdruck.
+	\end{enumerate}
+	\item Erster Token ist eine Zahl:
+	\begin{enumerate}
+		\item Wenn zweiter Token \texttt{END} ist \verb+->+ Parsen erfolgreich.
+		\item Wenn zweiter Token Interval-Operator ist:
+		\begin{enumerate}
+			\item Wenn dritter Token Zahl und vierter Token \texttt{END} ist \verb+->+ Parsen erfolgreich.
+			\item Alles andere \verb+->+ Ungültiger Ausdruck.
+		\end{enumerate}
+		\item Alles andere \verb+->+ Ungültiger Ausdruck.
+	\end{enumerate}
+	\item Alles andere \verb+->+ Ungültiger Ausdruck.
+\end{enumerate}
+
 \section*{Bedienung}
 
 Um das Programm zu starten muss die Datei \texttt{DecisionTree.exe} ausgeführt werden. Dafür wird neben der \texttt{.exe} auch der Ordern \texttt{./res/} mit Inhalt benötigt.
 Beim Starten über die Kommandozeile kann noch ein Pfad zu einer XML-Datei als Argument angegeben werden, um einen eigenen Entscheidungsbaum zu laden. 
 \[\texttt{.\textbackslash DecisionTree.exe [filename]}\]
-Wird kein Argument angegeben wird der oben vorgestellte Beispielsbaum als Default geladen.
+Wird kein Argument angegeben wird der oben vorgestellte Beispielsbaum geladen.
 \\
 \\
 Die Ausführung des Programms findet in einem \texttt{read-eval-print loop (REPL)} statt. Dem Nutzer wird eine Frage gestellt, auf die er dann antworten muss. Ist die Antwort ungültig, das heißt die Antwort entspricht nicht der erwarteten Form oder ist keine der möglichen Antwortmöglichkeiten, so wird der Nutzer erneut aufgefordert zu antworten. 
 Wenn ein Blatt des Entscheidungsbaumes erreicht wird, wird das Endergebnis angezeigt und das Programm beendet.
+\\
+\\
+Wenn zur Compile-Zeit \verb+RUN_TESTS+ definiert ist, wird anstelle des \emph{normalen} Programmes der Entscheidungsbaum mit den in der Funktion \verb+run_tests+ angegebenen Tests getestet. Diese Tests sind für den Beispielbaum und müssten für andere Enscheidungsbäume angepasst werden.  
+\\
+\\
+Neben dem oben vorgestellten Entscheidungsbaum liegen noch zwei weitere Beispiele in dem Ordner \texttt{./res/}. Den Baum in der Datei \texttt{job.xml} habe ich hier \href{https://regenerativetoday.com/simple-explanation-on-how-decision-tree-algorithm-makes-decisions/}{\textbf{hier}} gefunden und den Baum in der Datei \texttt{badminton.xml} \href{https://www.hackerearth.com/practice/machine-learning/machine-learning-algorithms/ml-decision-tree/tutorial/}{\textbf{hier}}. 
+\\
+\\
+Hier sind beide Bäume nochmal grafisch dargestellt:
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{badminton.png}
+	\caption{badminton.xml}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{job.png}
+	\caption{job.xml}
+\end{figure}
+
 
 \section*{Bibliotheken}
 

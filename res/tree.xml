@@ -1,7 +1,7 @@
 <decisiontree>
   <intro>Deciding whether to walk or take the bus.</intro>
   <option name="weather">
-    <prompt>How is the weather? (sunny/cloudy/rain)</prompt>
+    <prompt>How is the weather? (sunny/cloudy/rainy)</prompt>
     <decision value="sunny" name="time">
       <prompt>How much time do you have (in minutes)?</prompt>
       <invalid value="&lt;0"/>
@@ -13,7 +13,7 @@
       <final value="yes" name="walk" />
       <final value="no" name="bus" />
     </option>
-    <final value="rain" name="bus" />
+    <final value="rainy" name="bus" />
   </option>
 
   <result name="walk">You should walk.</result>

@@ -113,10 +113,10 @@ static const char* next_token(Token& token, const char* cursor)
         break;
     }
     TOKEN_CASE1('=', TokenType::EQ)
-        TOKEN_CASE1(':', TokenType::BETWEEN)
-        TOKEN_CASE2('<', TokenType::LT, '=', TokenType::LTEQ)
-        TOKEN_CASE2('>', TokenType::GT, '=', TokenType::GTEQ)
-        TOKEN_CASE2('!', TokenType::UNKNOWN, '=', TokenType::NOTEQ)
+    TOKEN_CASE1(':', TokenType::BETWEEN)
+    TOKEN_CASE2('<', TokenType::LT, '=', TokenType::LTEQ)
+    TOKEN_CASE2('>', TokenType::GT, '=', TokenType::GTEQ)
+    TOKEN_CASE2('!', TokenType::UNKNOWN, '=', TokenType::NOTEQ)
     }
 
     token.end = cursor;

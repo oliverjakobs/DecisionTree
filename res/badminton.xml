@@ -1,0 +1,26 @@
+<decisiontree>
+  <intro>Should I play badminton?</intro>
+  <option name="weather">
+    <prompt>How is the weather? (sunny/cloudy/rainy)</prompt>
+    
+    <decision value="rainy" name="wind">
+      <prompt>How strong is the wind?</prompt>
+      <invalid value="&lt;0"/>
+      <final value="&lt;=20" name="yes" />
+      <final value="&gt;20" name="no" />
+    </decision>
+    
+    <decision value="sunny" name="humidity">
+      <prompt>How high is the humidity (in percent)?</prompt>
+      <invalid value="&lt;0"/>
+      <invalid value="&gt;100"/>
+      <final value="&lt;=75" name="yes" />
+      <final value="&gt;75" name="no" />
+    </decision>
+    
+    <final value="cloudy" name="yes" />
+  </option>
+
+  <result name="yes">Yes, you should play.</result>
+  <result name="no">No, you shouldn't play.</result>
+</decisiontree>
